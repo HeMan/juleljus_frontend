@@ -22,7 +22,7 @@ class list_patterns:
 
 class run_pattern:
     def GET(self, pattern):
-	if pattern in patterns:
+        if pattern in patterns:
             output = 'running ' + pattern
             broker.reconnect()
             (mqttresult, mid) = broker.publish('juleljus/',pattern)
@@ -33,8 +33,8 @@ class run_pattern:
             return web.notfound("Does not exist")
 
 def on_disconnect(client, userdata, rc):
-	print("disconnected")
-	client.reconnect()
+    print("disconnected")
+    client.reconnect()
 
 def on_connect(client, userdata, flags, rc):
     print("Connection returned result: "+connack_string(rc))
@@ -44,10 +44,7 @@ broker.on_disconnect = on_disconnect
 broker.on_connect = on_connect
 broker.connect('192.168.128.7')
 
-    
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     app = web.application(urls, globals(), autoreload=True)
     web.httpserver.runsimple(app.wsgifunc(), ("::", 8080))
-
-    #app.run()
