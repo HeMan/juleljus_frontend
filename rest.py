@@ -9,9 +9,9 @@ web.config.debug = True
 patterns = ['running_red', 'running_white', 'red_in_white', 'running_white_blue']
 
 urls = (
-    '/patterns', 'list_patterns',
-    '/run/(.+)/', 'run_pattern',
-    '/run/(.+)', 'run_pattern',
+    '/api/patterns', 'list_patterns',
+    '/api/run/(.+)/', 'run_pattern',
+    '/api/run/(.+)', 'run_pattern',
 )
 
 class list_patterns:
@@ -42,9 +42,11 @@ def on_connect(client, userdata, flags, rc):
 broker = client.Client()
 broker.on_disconnect = on_disconnect
 broker.on_connect = on_connect
-broker.connect('192.168.128.7')
-
+broker.connect('blacken.linuxguru.se')
 
 if __name__ == "__main__":
     app = web.application(urls, globals(), autoreload=True)
     web.httpserver.runsimple(app.wsgifunc(), ("::", 8080))
+else:
+    app = web.application(urls, globals())
+    application = app.wsgifunc()
