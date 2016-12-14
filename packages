@@ -1,4 +1,6 @@
 argparse==1.2.1
+gevent==1.1.2
+greenlet==0.4.11
 paho-mqtt==1.2
 uWSGI==2.0.14
 web.py==0.38
