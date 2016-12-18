@@ -43,7 +43,8 @@ def get_patterns(client, timeout=1.0):
 
 class list_patterns:
     def GET(self):
-        return get_patterns(broker)
+        patterns = get_patterns(broker)
+        return patterns
 
 class run_pattern:
     def GET(self, pattern):
@@ -51,8 +52,6 @@ class run_pattern:
             output = 'running ' + pattern
             broker.reconnect()
             (mqttresult, mid) = broker.publish('juleljus/run',pattern)
-            print(mqttresult)
-            print(mid)
             return output
         else:
             return web.notfound("Does not exist")
@@ -60,6 +59,8 @@ class run_pattern:
 broker = mqtt.Client()
 broker.on_disconnect = on_disconnect
 broker.connect('blacken.linuxguru.se')
+
+patterns = get_patterns(broker)
 
 if __name__ == "__main__":
     app = web.application(urls, globals(), autoreload=True)
