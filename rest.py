@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 import json
-from paho.mqtt import client
+import paho.mqtt.client as mqtt
 import web
+import time
 
 web.config.debug = True
-
-patterns = ['running_red', 'running_white', 'red_in_white', 'running_white_blue']
 
 urls = (
     '/api/patterns', 'list_patterns',
@@ -14,34 +13,52 @@ urls = (
     '/api/run/(.+)', 'run_pattern',
 )
 
+def on_disconnect(client, userdata, rc):
+    print("disconnected")
+    client.reconnect()
+
+def get_patterns(client, timeout=1.0):
+    def on_message(iclient, userdata, msg):
+        iclient.patterns = msg.payload
+        iclient.on_message = None
+
+    def on_connect(iclient, userdata, flags, rc):
+        iclient.subscribe("juleljus/return") 
+        iclient.on_message = on_message
+
+    subscriber = mqtt.Client(client_id="fdsafas100")
+    subscriber.on_connect = on_connect
+    subscriber.connect('blacken.linuxguru.se')
+    while not subscriber.on_message:
+        subscriber.loop()
+
+    (mqttresult, mid) = client.publish('juleljus/patterns','get')
+
+    while subscriber.on_message:
+        subscriber.loop(timeout=5.0, max_packets=10)
+
+    subscriber.unsubscribe("juleljus/#")
+    subscriber.on_message = None
+    return subscriber.patterns
+
 class list_patterns:
     def GET(self):
-        output = json.dumps(patterns)
-        return output
-
+        return get_patterns(broker)
 
 class run_pattern:
     def GET(self, pattern):
         if pattern in patterns:
             output = 'running ' + pattern
             broker.reconnect()
-            (mqttresult, mid) = broker.publish('juleljus/',pattern)
+            (mqttresult, mid) = broker.publish('juleljus/run',pattern)
             print(mqttresult)
             print(mid)
             return output
         else:
             return web.notfound("Does not exist")
 
-def on_disconnect(client, userdata, rc):
-    print("disconnected")
-    client.reconnect()
-
-def on_connect(client, userdata, flags, rc):
-    print("Connection returned result: "+connack_string(rc))
-
-broker = client.Client()
+broker = mqtt.Client()
 broker.on_disconnect = on_disconnect
-broker.on_connect = on_connect
 broker.connect('blacken.linuxguru.se')
 
 if __name__ == "__main__":
