@@ -23,22 +23,37 @@ def get_patterns(client, timeout=1.0):
         iclient.on_message = None
 
     def on_connect(iclient, userdata, flags, rc):
+        print("connected")
         iclient.subscribe("juleljus/return") 
         iclient.on_message = on_message
-
     subscriber = mqtt.Client(client_id="fdsafas100")
     subscriber.on_connect = on_connect
     subscriber.connect('blacken.linuxguru.se')
+
+    timeout = 0
     while not subscriber.on_message:
-        subscriber.loop()
+        timeout += 1
+        if timeout % 100 == 0:
+            print("looping")
+        subscriber.loop(timeout=0.1, max_packets=1)
+        client.loop(timeout=0.1, max_packets=1)
 
     (mqttresult, mid) = client.publish('juleljus/patterns','get')
 
+    timeout = 0
     while subscriber.on_message:
-        subscriber.loop(timeout=5.0, max_packets=10)
+        timeout += 1
+        if timeout % 10 == 0:
+            client.reconnect()
+            print("looping")
+            (mqttresult, mid) = client.publish('juleljus/patterns','get')
+        subscriber.loop(timeout=0.1, max_packets=1)
+        client.loop(timeout=0.1, max_packets=1)
 
     subscriber.unsubscribe("juleljus/#")
     subscriber.on_message = None
+    patterns = subscriber.patterns
+    subscriber.disconnect()
     return subscriber.patterns
 
 class list_patterns:
