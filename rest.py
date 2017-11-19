@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
-import json
 import paho.mqtt.client as mqtt
-import web
-import time
+from flask import Flask, send_from_directory
+import ssl
 
-web.config.debug = True
-
-urls = (
-    '/api/patterns', 'list_patterns',
-    '/api/run/(.+)/', 'run_pattern',
-    '/api/run/(.+)', 'run_pattern',
-)
+app = Flask(__name__, static_url_path='/static')
+app.config.from_pyfile("config.py")
 
 def on_disconnect(client, userdata, rc):
     print("disconnected")
@@ -24,11 +18,13 @@ def get_patterns(client, timeout=1.0):
 
     def on_connect(iclient, userdata, flags, rc):
         print("connected")
-        iclient.subscribe("juleljus/return") 
+        iclient.subscribe("juleljus/return")
         iclient.on_message = on_message
     subscriber = mqtt.Client(client_id="fdsafas100")
     subscriber.on_connect = on_connect
-    subscriber.connect('blacken.linuxguru.se')
+    subscriber.tls_set(tls_version=ssl.PROTOCOL_TLSv1_2)
+    subscriber.username_pw_set(app.config['MQTT_USERNAME'], app.config['MQTT_PASSWORD'])
+    subscriber.connect(app.config['MQTT_SERVER'], 8883)
 
     timeout = 0
     while not subscriber.on_message:
@@ -56,30 +52,28 @@ def get_patterns(client, timeout=1.0):
     subscriber.disconnect()
     return subscriber.patterns
 
-class list_patterns:
-    def GET(self):
-        patterns = get_patterns(broker)
-        return patterns
+@app.route("/api/patterns")
+def list_patterns():
+    patterns = get_patterns(broker)
+    return patterns
 
-class run_pattern:
-    def GET(self, pattern):
-        if pattern in patterns:
-            output = 'running ' + pattern
-            broker.reconnect()
-            (mqttresult, mid) = broker.publish('juleljus/run',pattern)
-            return output
-        else:
-            return web.notfound("Does not exist")
+@app.route("/api/run/<pattern>")
+def run_pattern(pattern):
+    if pattern in patterns:
+        output = 'running ' + pattern
+        broker.reconnect()
+        (mqttresult, mid) = broker.publish('juleljus/run',pattern)
+        return output
+    else:
+        return web.notfound("Does not exist")
 
 broker = mqtt.Client()
 broker.on_disconnect = on_disconnect
-broker.connect('blacken.linuxguru.se')
+broker.tls_set(tls_version=ssl.PROTOCOL_TLSv1_2)
+broker.username_pw_set(app.config['MQTT_USERNAME'], app.config['MQTT_PASSWORD'])
+broker.connect(app.config['MQTT_SERVER'], 8883)
 
 patterns = get_patterns(broker)
 
 if __name__ == "__main__":
-    app = web.application(urls, globals(), autoreload=True)
-    web.httpserver.runsimple(app.wsgifunc(), ("::", 8080))
-else:
-    app = web.application(urls, globals())
-    application = app.wsgifunc()
+    app.run(debug=True)

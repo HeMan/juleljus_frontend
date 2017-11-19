@@ -1,6 +1,6 @@
 $(document).ready(function() {
     $.ajax({
-        url: "api/patterns"
+        url: "/api/patterns"
     }).then(function(data) {
         data = $.parseJSON(data);
         $.each(data, function(i, item) {
@@ -17,6 +17,6 @@ $(document).ready(function() {
 
 function run_pattern(pattern) {
     $.ajax({
-        url: "api/run/"+pattern
+        url: "/api/run/"+pattern
     });
 };
