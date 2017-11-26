@@ -9,5 +9,5 @@ COPY config.py /opt/app
 
 EXPOSE 8000
 
-ENTRYPOINT ["/usr/local/bin/gunicorn", "rest:app"]
+ENTRYPOINT ["/usr/local/bin/gunicorn", "--bind","[::]", "rest:app"]
 
