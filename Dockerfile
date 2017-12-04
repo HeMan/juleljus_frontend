@@ -6,6 +6,7 @@ RUN pip install -r requirements.txt
 
 COPY rest.py /opt/app
 COPY config.py /opt/app
+COPY static/ /opt/app/static
 
 EXPOSE 8000
 
