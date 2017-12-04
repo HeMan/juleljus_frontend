@@ -2,6 +2,7 @@
 
 import paho.mqtt.client as mqtt
 from flask import Flask, send_from_directory
+import json
 import ssl
 
 app = Flask(__name__, static_url_path='/static')
@@ -50,7 +51,7 @@ def get_patterns(client, timeout=1.0):
     subscriber.on_message = None
     patterns = subscriber.patterns
     subscriber.disconnect()
-    return subscriber.patterns
+    return patterns
 
 @app.route("/api/patterns")
 def list_patterns():
@@ -59,10 +60,10 @@ def list_patterns():
 
 @app.route("/api/run/<pattern>")
 def run_pattern(pattern):
-    if pattern in patterns:
+    if pattern in json.loads(patterns):
         output = 'running ' + pattern
         broker.reconnect()
-        (mqttresult, mid) = broker.publish('juleljus/run',pattern)
+        (mqttresult, mid) = broker.publish('juleljus/run',json.dumps(pattern))
         return output
     else:
         return web.notfound("Does not exist")
